@@ -10,20 +10,30 @@ Most AI health systems show a prediction and an explanation. **Ours also tells y
 
 A nurse is discharging a diabetic patient. The system says **68% chance of readmission within 30 days**. What should it show next to that number, and how far can she trust it?
 
-Our screen shows four things:
+For each patient the system prints four things:
 
-1. **Risk**: the predicted chance, and the range we get when we retrain the model on slightly different data (for example "61% to 72%"). A narrow range means the number itself is stable.
-2. **Main factors**: what pushed the risk up or down, such as "3 inpatient admissions in the past year raises risk".
-3. **Reliability score (0 to 1)**: how consistent that explanation is. High, Moderate or Low. If it is Low, a red warning says to rely more on clinical judgement.
+1. **Risk**: the predicted chance, and the range we get when we retrain the model on slightly different data (for example "51% to 71%"). A narrow range means the number itself is stable.
+2. **Main factors**: what pushed the risk up or down, such as "13 inpatient admissions in the past year raises risk".
+3. **Reliability score (0 to 1)**: how consistent that explanation is: High, Moderate or Low. If it is Low, a warning says to rely more on clinical judgement.
 4. **What if?**: which adjustable factors (discharge destination, insulin dose, length of stay) would change the model's risk most. This is not treatment advice.
 
-At the bottom the nurse can say **"I agree" or "I disagree"** and give a reason. Every answer is saved in an audit log. This follows Salimparsa et al.: clinicians argue with a system, they don't just accept or reject it.
+A clinician dashboard comes in a later phase. For now the system runs from the terminal.
+
+## Where do the "patients" come from?
+
+We have no real hospital patients, and we don't need any. The dataset is split by patient:
+
+- **70% training patients**: the models learn from these.
+- **15% calibration patients**: used to make the risk percentages honest.
+- **15% test patients (14,815 hospital stays)**: the models **never see these during training**.
+
+The test patients play the role of "new patients arriving at the hospital". When you run `python run.py --patient 3923`, the system takes test patient 3923, predicts their risk, explains it and scores the explanation. Because these are real historical records, we also know what actually happened, so we can check whether the system was right. That is how every research paper in this area evaluates a model, and it is more honest than typing in made-up patient values.
 
 ## The pipeline, step by step
 
 ```
 raw hospital data → clean + split by patient → train 2 models → explain with 3 methods
-      → compare the explanations → reliability score → interface + audit log
+      → compare the explanations → reliability score → printed report per patient
 ```
 
 ### Step 1: Data (`xaicdss/data.py`)
@@ -33,7 +43,7 @@ raw hospital data → clean + split by patient → train 2 models → explain wi
 - Only 11.4% of stays end in readmission, so we report AUROC, AUPRC and Brier score, not plain accuracy.
 
 ### Step 2: Two models (`xaicdss/models.py`)
-- **EBM (Explainable Boosting Machine)**: the *readable* model. It adds up one simple graph per feature, like the model Caruana et al. used to find the asthma problem. You can open any graph in the app.
+- **EBM (Explainable Boosting Machine)**: the *readable* model. It adds up one simple graph per feature, like the model Caruana et al. used to find the asthma problem.
 - **XGBoost**: the *complex* model, hundreds of decision trees.
 - Both are trained on exactly the same patients and calibrated so that "20%" really means about 20 in 100.
 
@@ -81,20 +91,20 @@ We also compute **how unusual** the patient is compared with the training data (
 - **Why patient-level split?** See Step 1. It is the biggest risk in our risk register.
 - **Is "what if" a treatment recommendation?** No. It shows what the model reacts to. Treatment recommendations are out of scope.
 
-## How to run the demo
+## How to run it
+
+Double-click `run.bat` (Windows), or from a terminal inside the folder:
 
 ```bash
-streamlit run app/streamlit_app.py
+python run.py                    # explain the two demo patients
+python run.py --patient 3923     # explain any test patient (0 to 14814)
+python run.py --random           # a random test patient
+python run.py --model ebm        # use the readable EBM instead of XGBoost
 ```
-
-Pick a patient number or press **Random patient**. Switch between XGBoost and EBM in the sidebar. The **Evidence** page shows all result tables and charts. The **Feedback log** page shows what clinicians entered.
 
 ## Suggested demo (3 minutes)
 
-1. **Patient 3923** (opens by default). Risk 68%, like the nurse in our report. Reliability is High, the factors make clinical sense (13 inpatient admissions last year, glucose over 300), but the "unusual patient" warning shows this person is unlike most of the training data. Then show that no adjustable factor lowers the risk: the model's concern is mostly history, not anything decided at discharge.
-2. **Patient 10613**. Risk only 5%, but reliability is **Low** and the red warning appears: the methods disagree on direction for age and number of medications. This patient was in fact readmitted. Use it to explain why a confident-looking number with a shaky explanation deserves a second look, and then be honest that across 2,000 patients the score does not reliably predict errors (RQ3).
-3. Switch the model to **EBM** and open "Readable model: how one factor changes risk" to show a graph you can read directly, as in Caruana's asthma example.
-4. Fill in **Do you agree?** with a disagreement and a reason, then open the **Feedback log** page.
-5. Open the **Evidence** page for the cost-of-readability table and the experiment results.
-
-Screenshots: `docs/screenshot_patient_3923.png`, `docs/screenshot_patient_10613.png`.
+1. **`python run.py --patient 3923`**. Risk 68%, like the nurse in our report. Reliability is High, the factors make clinical sense (13 inpatient admissions last year, glucose over 300), but the "unusual patient" warning shows this person is unlike most of the training data. No adjustable factor lowers the risk: the model's concern is mostly history, not anything decided at discharge.
+2. **`python run.py --patient 10613`**. Risk only 5%, but reliability is **Low** and the warning appears: the methods disagree on the direction of age and number of medications. This patient was in fact readmitted. Use it to explain why a confident-looking number with a shaky explanation deserves a second look, then be honest that across 2,000 patients the score does not reliably predict errors (RQ3).
+3. **`python run.py --patient 3923 --model ebm`**. The same patient explained by the readable model, for comparison.
+4. Open `results/` to show the cost-of-readability table and the experiment results and charts.
