@@ -38,4 +38,4 @@ Performance is similar across gender and the two largest race groups. It is **no
 - "What if" suggestions describe the model's sensitivity, not treatment advice.
 
 ## Human oversight
-The clinician makes every decision. The interface records each clinician's agreement or disagreement, with a reason, in `app_data/audit_log.jsonl`.
+The clinician makes every decision; the system only gives a risk, an explanation and a reliability score. A clinician interface with a way to record disagreement is planned for a later phase (report objective 7).
