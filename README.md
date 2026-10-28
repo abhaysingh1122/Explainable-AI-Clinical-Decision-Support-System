@@ -12,21 +12,27 @@ For a plain-language walkthrough you can present from, see **[docs/HOW_IT_WORKS.
 
 Needs Python 3.11 or newer.
 
+**Easiest:** double-click `run.bat` (Windows) or run `./run.sh` (Mac/Linux). The first run installs the packages; after that it explains the two demo patients in the terminal.
+
+Or run it yourself:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-python -m xaicdss.pipeline                         # 1. data, split, models (about 6 min)
-python -m xaicdss.experiments.rq2_synthetic        # 2. similar-features experiment (about 2 min)
-python -m xaicdss.experiments.rq1_rq3 --model xgb  # 3. agreement and error test (about 10 min)
-python -m xaicdss.experiments.rq1_rq3 --model ebm
-pytest -q                                          # tests, including the leakage test
-
-streamlit run app/streamlit_app.py                 # 4. the interface
+python run.py                      # explain the two demo patients
+python run.py --patient 3923       # explain one test patient (0 to 14814)
+python run.py --random             # explain a random test patient
+python run.py --model ebm          # use the readable EBM instead of XGBoost
+python run.py --train              # rebuild data split and models (about 6 min)
+python run.py --experiments        # rerun RQ1, RQ2, RQ3 (about 25 min)
+python run.py --test               # run the automatic tests
 ```
 
-The trained system (`artifacts/system.joblib`) and all results are already included, so you can skip straight to step 4. If the app fails to load the saved models (usually a library version mismatch), run step 1 again to rebuild them.
+The trained system (`artifacts/system.joblib`) and all results are already included, so nothing needs training. If the saved models can't be loaded (usually a library version mismatch), `run.py` rebuilds them automatically.
+
+Optional web interface: `streamlit run app/streamlit_app.py`.
 
 ## Project layout
 
@@ -42,7 +48,9 @@ xaicdss/
   experiments/
     rq1_rq3.py       do methods disagree? does disagreement warn of errors?
     rq2_synthetic.py what happens when two features are very similar?
-app/streamlit_app.py the clinician interface
+run.py               one-file entry point for the whole backend
+run.bat / run.sh     double-click launchers that set everything up
+app/streamlit_app.py optional web interface
 tests/               automatic tests (leakage, encoding, score maths)
 results/             every table and figure the experiments produce
 docs/                plain-language guide and model card
