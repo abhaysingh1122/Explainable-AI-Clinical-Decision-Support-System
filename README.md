@@ -6,13 +6,13 @@ The system predicts whether a diabetic patient will be **readmitted to hospital 
 
 > Research prototype for demonstration only. Do not use with real patients.
 
-For a plain-language walkthrough you can present from, see **[docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md)**.
+For a plain-language walkthrough you can present from, see **[docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md)**. To see what every file does, read **[docs/FILES_EXPLAINED.md](docs/FILES_EXPLAINED.md)**.
 
 ## Quick start
 
 Needs Python 3.11 or newer.
 
-**Easiest:** double-click `run.bat` (Windows) or run `./run.sh` (Mac/Linux). The first run installs the packages; after that it explains the two demo patients in the terminal.
+**Easiest (Windows):** double-click `run.bat`. The first run installs the packages; after that it explains the two demo patients in the terminal.
 
 Or run it yourself:
 
@@ -32,8 +32,6 @@ python run.py --test               # run the automatic tests
 
 The trained system (`artifacts/system.joblib`) and all results are already included, so nothing needs training. If the saved models can't be loaded (usually a library version mismatch), `run.py` rebuilds them automatically.
 
-Optional web interface: `streamlit run app/streamlit_app.py`.
-
 ## Project layout
 
 ```
@@ -49,11 +47,10 @@ xaicdss/
     rq1_rq3.py       do methods disagree? does disagreement warn of errors?
     rq2_synthetic.py what happens when two features are very similar?
 run.py               one-file entry point for the whole backend
-run.bat / run.sh     double-click launchers that set everything up
-app/streamlit_app.py optional web interface
+run.bat              double-click launcher for Windows (sets everything up)
 tests/               automatic tests (leakage, encoding, score maths)
 results/             every table and figure the experiments produce
-docs/                plain-language guide and model card
+docs/                plain-language guide, file-by-file guide, model card
 ```
 
 ## Headline results
